@@ -11,7 +11,7 @@ test_shall_configure_eth_name() {
 
 	main
 
-	mock_verify change_eth_name_machnism EXACTLY_CALLED 1
+	mock_verify change_eth_name_machnism ONLY_CALLED_WITH /etc/default/grub
 }
 
 test_change_eth_name_machnism_via_grub_config() {

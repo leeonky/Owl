@@ -14,6 +14,6 @@ change_eth_name_machnism() {
 }
 
 main() {
-	change_eth_name_machnism
+	change_eth_name_machnism /etc/default/grub
 }
 
