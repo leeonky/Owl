@@ -28,7 +28,11 @@ get_eth_device_name() {
 }
 
 set_eth_boot_on() {
-	sed 's/\(^ONBOOT\)=.*/\1=yes/g' -i "$1/$2"
+	if cat "$1/$2" | grep -q -e "^ONBOOT="; then
+		sed 's/\(^ONBOOT\)=.*/\1=yes/g' -i "$1/$2"
+	else
+		echo "ONBOOT=yes" >> "$1/$2"
+	fi
 }
 
 main() {
@@ -36,6 +40,6 @@ main() {
 	local eth_device_name
 	eth_device_name=$(get_eth_device_name)
 	( check_last_return || log_error "get_eth_device_name failed, configure abort!" ) && \
-	set_eth_boot_on /etc/sysconfig/network-scripts/ ifcfg-$eth_device_name
+	( set_eth_boot_on /etc/sysconfig/network-scripts/ ifcfg-$eth_device_name || log_error "set_eth_boot_on failed, configure abort!" )
 }
 
