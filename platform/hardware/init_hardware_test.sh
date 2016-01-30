@@ -6,7 +6,7 @@ setUp() {
 	kernel_base_args="crashkernel=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet"
 }
 
-test_shall_configure_eth_name() {
+ignor_test_shall_configure_eth_name() {
 	mock_function change_eth_name_machnism
 
 	main
