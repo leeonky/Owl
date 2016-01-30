@@ -13,8 +13,29 @@ change_eth_name_machnism() {
 	grub2_mkconfig -o /boot/grub2/grub.cfg
 }
 
+check_last_return() {
+	return $?
+}
+
+log_error() {
+	local res=$?
+	echo "$1" >&2
+	return $res
+}
+
+get_eth_device_name() {
+	nmcli con show | grep -v TYPE | grep -v generic | grep -v bridge | awk '{print $1}'
+}
+
+set_eth_boot_on() {
+	sed 's/\(^ONBOOT\)=.*/\1=yes/g' -i "$1/$2"
+}
+
 main() {
 	#change_eth_name_machnism /etc/default/grub
-	return
+	local eth_device_name
+	eth_device_name=$(get_eth_device_name)
+	( check_last_return || log_error "get_eth_device_name failed, configure abort!" ) && \
+	set_eth_boot_on /etc/sysconfig/network-scripts/ ifcfg-$eth_device_name
 }
 
