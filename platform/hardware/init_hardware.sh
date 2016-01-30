@@ -1,3 +1,4 @@
+. "$(dirname "$0")/conf"
 
 grub2_mkconfig() {
 	grub2-mkconfig "$@"
@@ -27,12 +28,28 @@ get_eth_device_name() {
 	nmcli con show | grep -v TYPE | grep -v generic | grep -v bridge | awk '{print $1}'
 }
 
-set_eth_boot_on() {
-	if cat "$1/$2" | grep -q -e "^ONBOOT="; then
-		sed 's/\(^ONBOOT\)=.*/\1=yes/g' -i "$1/$2"
+update_ifcfg_by_name() {
+	local name=$1
+	local value=$2
+	local ifcfg_file="$3"
+	if cat "$ifcfg_file" | grep -q -e "^$name="; then
+		sed "s/\(^$name\)=.*/\1=$value/g" -i "$ifcfg_file"
 	else
-		echo "ONBOOT=yes" >> "$1/$2"
+		echo "$name=$value" >> "$ifcfg_file"
 	fi
+}
+
+remove_ifcfg_by_name() {
+	sed "/^$1=.*/d" -i "$2"
+}
+
+update_eth_conf() {
+	update_ifcfg_by_name ONBOOT yes "$1"
+	update_ifcfg_by_name BOOTPROTO none "$1"
+	update_ifcfg_by_name IPADDR "$2" "$1"
+	update_ifcfg_by_name NETMASK "$3" "$1"
+	update_ifcfg_by_name GATEWAY "$4" "$1"
+	remove_ifcfg_by_name PREFIX "$1"
 }
 
 main() {
@@ -40,6 +57,6 @@ main() {
 	local eth_device_name
 	eth_device_name=$(get_eth_device_name)
 	( check_last_return || log_error "get_eth_device_name failed, configure abort!" ) && \
-	( set_eth_boot_on /etc/sysconfig/network-scripts/ ifcfg-$eth_device_name || log_error "set_eth_boot_on failed, configure abort!" )
+	update_eth_conf "/etc/sysconfig/network-scripts/ifcfg-$eth_device_name" $ip_addr $netmask $gateway
 }
 

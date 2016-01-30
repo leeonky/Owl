@@ -2,6 +2,7 @@
 . "$(dirname "$0")/init_hardware.sh"
 
 setUp() {
+	clear_global_vars
 	mock_function grub2_mkconfig
 	kernel_base_args="crashkernel=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet"
 }
@@ -64,33 +65,23 @@ eno16777736  b2de10c7-6db3-4d60-be5b-5ce803425589  802-3-ethernet  --"'
 
 test_shall_return_error_when_get_eth_device_name_error() {
 	mock_function get_eth_device_name 'return 100'
-	mock_function set_eth_boot_on 
+	mock_function update_eth_conf
 
 	main 2>"$stderrf"
 
 	assertEquals 100 $?
 	assertEquals "get_eth_device_name failed, configure abort!" "$(cat "$stderrf")"
-	mock_verify set_eth_boot_on NEVER_CALLED
+	mock_verify update_eth_conf NEVER_CALLED
 }
 
-test_shall_set_booton() {
+test_shall_update_eth_conf() {
 	mock_function get_eth_device_name 'echo ethx'
-	mock_function set_eth_boot_on 
+	mock_function update_eth_conf
 
 	main
 
 	mock_verify get_eth_device_name EXACTLY_CALLED 1
-	mock_verify set_eth_boot_on ONLY_CALLED_WITH '/etc/sysconfig/network-scripts/' 'ifcfg-ethx'
-}
-
-test_shall_return_error_when_set_eth_boot_on_error() {
-	mock_function get_eth_device_name 'echo ethx'
-	mock_function set_eth_boot_on 'return 100'
-
-	main 2>"$stderrf"
-
-	assertEquals 100 $?
-	assertEquals "set_eth_boot_on failed, configure abort!" "$(cat "$stderrf")"
+	mock_verify update_eth_conf ONLY_CALLED_WITH '/etc/sysconfig/network-scripts/ifcfg-ethx' $ip_addr $netmask $gateway
 }
 
 test_change_ifcfg_booton_on() {
@@ -98,10 +89,10 @@ test_change_ifcfg_booton_on() {
 ONBOOT=no
 EOF
 
-	set_eth_boot_on /tmp/ ifcfg
+	update_eth_conf /tmp/ifcfg
 
 	assertEquals 0 $?
-	assertEquals "ONBOOT=yes" "$(cat /tmp/ifcfg)"
+	assertEquals "ONBOOT=yes" "$(cat /tmp/ifcfg | grep ^ONBOOT)"
 }
 
 test_change_ifcfg_when_no_ONBOOT_item() {
@@ -109,11 +100,55 @@ test_change_ifcfg_when_no_ONBOOT_item() {
 XXONBOOT=no
 EOF
 
-	set_eth_boot_on /tmp/ ifcfg
+	update_eth_conf /tmp/ifcfg
 
 	assertEquals 0 $?
-	assertEquals "XXONBOOT=no
-ONBOOT=yes" "$(cat /tmp/ifcfg)"
+	assertEquals "ONBOOT=yes" "$(cat /tmp/ifcfg | grep ^ONBOOT)"
+}
+
+test_set_ipaddr_shall_disable_dhcp() {
+	cat > /tmp/ifcfg <<EOF
+BOOTPROTO=dhcp
+EOF
+	update_eth_conf /tmp/ifcfg
+
+	assertEquals 'BOOTPROTO=none' "$(cat /tmp/ifcfg | grep ^BOOTPROTO)"
+}
+
+test_set_ipaddr_shall_set_ip() {
+	cat > /tmp/ifcfg <<EOF
+IPADDR=1.2.3.4
+EOF
+	update_eth_conf /tmp/ifcfg 192.168.1.111
+
+	assertEquals 'IPADDR=192.168.1.111' "$(cat /tmp/ifcfg | grep ^IPADDR)"
+}
+
+test_set_ipaddr_shall_set_netmask() {
+	cat > /tmp/ifcfg <<EOF
+NETMASK=255.0.0.0
+EOF
+	update_eth_conf /tmp/ifcfg 192.168.1.111 255.255.255.0
+
+	assertEquals 'NETMASK=255.255.255.0' "$(cat /tmp/ifcfg | grep ^NETMASK)"
+}
+
+test_set_ipaddr_shall_remove_PREFIX() {
+	cat > /tmp/ifcfg <<EOF
+PREFIX=8
+EOF
+	update_eth_conf /tmp/ifcfg 192.168.1.111 255.255.255.0
+
+	assertEquals '' "$(cat /tmp/ifcfg | grep ^PREFIX)"
+}
+
+test_set_ipaddr_shall_set_gateway() {
+	cat > /tmp/ifcfg <<EOF
+GATEWAY=3.3.3.3
+EOF
+	update_eth_conf /tmp/ifcfg 192.168.1.111 255.255.255.0 192.168.1.1
+
+	assertEquals 'GATEWAY=192.168.1.1' "$(cat /tmp/ifcfg | grep ^GATEWAY)"
 }
 
 . $SHUNIT2_PATH/shunit2
