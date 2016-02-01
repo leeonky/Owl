@@ -74,9 +74,14 @@ test_shall_return_error_when_get_eth_device_name_error() {
 	mock_verify update_eth_conf NEVER_CALLED
 }
 
-test_shall_update_eth_conf() {
+mock_stubs() {
 	mock_function get_eth_device_name 'echo ethx'
 	mock_function update_eth_conf
+	mock_function update_dns
+}
+
+test_shall_update_eth_conf() {
+	mock_stubs
 
 	main
 
@@ -149,6 +154,23 @@ EOF
 	update_eth_conf /tmp/ifcfg 192.168.1.111 255.255.255.0 192.168.1.1
 
 	assertEquals 'GATEWAY=192.168.1.1' "$(cat /tmp/ifcfg | grep ^GATEWAY)"
+}
+
+test_shall_set_dns() {
+	mock_stubs
+
+	main
+
+	mock_verify update_dns ONLY_CALLED_WITH /etc/resolv.conf $gateway
+}
+
+test_update_dns() {
+	local dns_file=/tmp/dns
+	rm -f $dns_file
+
+	update_dns $dns_file 192.168.1.1
+
+	assertEquals 'nameserver 192.168.1.1' "$(cat $dns_file)"
 }
 
 . $SHUNIT2_PATH/shunit2

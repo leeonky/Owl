@@ -52,11 +52,16 @@ update_eth_conf() {
 	remove_ifcfg_by_name PREFIX "$1"
 }
 
+update_dns() {
+	echo "nameserver $2" > "$1"
+}
+
 main() {
 	#change_eth_name_machnism /etc/default/grub
 	local eth_device_name
 	eth_device_name=$(get_eth_device_name)
 	( check_last_return || log_error "get_eth_device_name failed, configure abort!" ) && \
-	update_eth_conf "/etc/sysconfig/network-scripts/ifcfg-$eth_device_name" $ip_addr $netmask $gateway
+	update_eth_conf "/etc/sysconfig/network-scripts/ifcfg-$eth_device_name" $ip_addr $netmask $gateway && \
+	update_dns /etc/resolv.conf $gateway
 }
 

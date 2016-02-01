@@ -22,7 +22,9 @@ test_ip_config() {
 
 	assertEquals "IP" "$ip_addr" "$(echo "$ip_infos" | awk '{print $2}')"
 	assertEquals "NETMASK" "$netmask" "$(echo "$ip_infos" | awk '{print $4}')"
-	assertEquals "GATEWAY" "$gateway" "$(route | grep default | awk '{print $2}')"
+	assertEquals "GATEWAY" "$gateway" "$(route -n | grep '^0.0.0.0' | awk '{print $2}')"
+	assertEquals "DNS" "nameserver" "$(cat /etc/resolv.conf | grep nameserver | head -n 1 | awk '{print $1}')"
+	assertEquals "DNS" "$gateway" "$(cat /etc/resolv.conf | grep nameserver | head -n 1 | awk '{print $2}')"
 }
 
 . $SHUNIT2_PATH/shunit2
