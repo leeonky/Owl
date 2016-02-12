@@ -56,8 +56,12 @@ update_dns() {
 	echo "nameserver $2" > "$1"
 }
 
+show_status() {
+	echo ">>>$1"
+}
+
 config_eth() {
-	echo '>>>Config eth'
+	show_status 'Config eth'
 	local eth_device_name
 	eth_device_name=$(get_eth_device_name)
 	( check_last_return || log_error "get_eth_device_name failed, configure abort!" ) && \
