@@ -59,8 +59,8 @@ test_install_rpms() {
 	local test_arch="$SYS_TEMP_PATH/testpackages"
 	rm -rf "$test_arch"
 	mkdir -p "$test_arch"
-	mkdir -p "$test_arch/archives.conf/"
-	cat > "$test_arch/archives.conf/01.Test1"<<EOF
+	mkdir -p "$test_arch/01.Test1"
+	cat > "$test_arch/01.Test1/install.sh"<<EOF
 local archives="a.rpm b.rpm"
 local install="install_command"
 local pre_install="install_command pre"
@@ -70,8 +70,8 @@ EOF
 	install_packages "$test_arch"
 
 	mock_verify install_command COOP_CALLED_WITH_ARGS pre
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/archives/a.rpm"
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/archives/b.rpm"
+	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/a.rpm"
+	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/b.rpm"
 	mock_verify install_command COOP_CALLED_WITH_ARGS post
 	mock_verify_all_called_end
 }
@@ -82,16 +82,16 @@ test_install_without_pre_post() {
 	local test_arch="$SYS_TEMP_PATH/testpackages"
 	rm -rf "$test_arch"
 	mkdir -p "$test_arch"
-	mkdir -p "$test_arch/archives.conf/"
-	cat > "$test_arch/archives.conf/01.Test1"<<EOF
+	mkdir -p "$test_arch/01.Test1"
+	cat > "$test_arch/01.Test1/install.sh"<<EOF
 local archives="a.rpm b.rpm"
 local install="install_command"
 EOF
 
 	install_packages "$test_arch"
 
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/archives/a.rpm"
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/archives/b.rpm"
+	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/a.rpm"
+	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/b.rpm"
 	mock_verify_all_called_end
 }
 
@@ -102,14 +102,15 @@ test_multi_install_by_ordey() {
 	local test_arch="$SYS_TEMP_PATH/testpackages"
 	rm -rf "$test_arch"
 	mkdir -p "$test_arch"
-	mkdir -p "$test_arch/archives.conf/"
-	cat > "$test_arch/archives.conf/02.Test1"<<EOF
+	mkdir -p "$test_arch/02.Test1"
+	cat > "$test_arch/02.Test1/install.sh"<<EOF
 local archives="b.rpm"
 local install="install_command2"
 local pre_install="install_command2 pre"
 local post_install="install_command2 post"
 EOF
-	cat > "$test_arch/archives.conf/01.Test1"<<EOF
+	mkdir -p "$test_arch/01.Test1"
+	cat > "$test_arch/01.Test1/install.sh"<<EOF
 local archives="a.rpm"
 local install="install_command1"
 local pre_install="install_command1 pre"
@@ -119,10 +120,10 @@ EOF
 	install_packages "$test_arch"
 
 	mock_verify install_command1 COOP_CALLED_WITH_ARGS pre
-	mock_verify install_command1 COOP_CALLED_WITH_ARGS "$test_arch/archives/a.rpm"
+	mock_verify install_command1 COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/a.rpm"
 	mock_verify install_command1 COOP_CALLED_WITH_ARGS post
 	mock_verify install_command2 COOP_CALLED_WITH_ARGS pre
-	mock_verify install_command2 COOP_CALLED_WITH_ARGS "$test_arch/archives/b.rpm"
+	mock_verify install_command2 COOP_CALLED_WITH_ARGS "$test_arch/02.Test1/b.rpm"
 	mock_verify install_command2 COOP_CALLED_WITH_ARGS post
 	mock_verify_all_called_end
 }

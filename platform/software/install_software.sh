@@ -17,19 +17,19 @@ security_config(){
 
 install_packages() {
 	local conf
-	for conf in $(ls "$1/archives.conf/")
+	for conf in $(ls "$1")
 	do
 		show_status "Installing $conf"
 		unset pre_install
 		unset post_install
 		unset install
 		unset archives 
-		. "$1/archives.conf/$conf"
+		. "$1/$conf/install.sh"
 		${pre_install:-}
 		local arch
 		for arch in ${archives:-}
 		do
-			${install:-} "$1/archives/$arch"
+			${install:-} "$1/$conf/$arch"
 		done
 		${post_install:-}
 	done
