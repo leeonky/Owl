@@ -54,7 +54,8 @@ test_shall_install_software() {
 }
 
 test_install_rpms() {
-	mock_function install_command
+	unset the_path
+	mock_function install_command 'the_path=$(pwd)'
 	mock_clear_called_list
 	local test_arch="$SYS_TEMP_PATH/testpackages"
 	rm -rf "$test_arch"
@@ -70,13 +71,13 @@ EOF
 	install_packages "$test_arch"
 
 	mock_verify install_command COOP_CALLED_WITH_ARGS pre
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/a.rpm"
-	mock_verify install_command COOP_CALLED_WITH_ARGS "$test_arch/01.Test1/b.rpm"
+	mock_verify install_command COOP_CALLED_WITH_ARGS "a.rpm" "b.rpm"
 	mock_verify install_command COOP_CALLED_WITH_ARGS post
 	mock_verify_all_called_end
+	assertEquals "$test_arch/01.Test1" "$the_path" 
 }
 
-test_install_without_pre_post() {
+itest_install_without_pre_post() {
 	mock_function install_command
 	mock_clear_called_list
 	local test_arch="$SYS_TEMP_PATH/testpackages"
@@ -95,7 +96,7 @@ EOF
 	mock_verify_all_called_end
 }
 
-test_multi_install_by_ordey() {
+itest_multi_install_by_ordey() {
 	mock_function install_command1
 	mock_function install_command2
 	mock_clear_called_list
