@@ -1,3 +1,4 @@
+#! /bin/bash
 DOCKER_BIN=docker
 retain_images() {
 	local image_list="$($DOCKER_BIN images)"
